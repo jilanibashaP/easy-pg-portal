@@ -1,73 +1,105 @@
 
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Bed, Users, Package, Settings, WalletCards } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Link, useLocation } from "react-router-dom";
+import { Home, Users, Building, Package, Wallet, BarChart3, Settings } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const BottomNav = () => {
   const location = useLocation();
-  
+  const isMobile = useIsMobile();
+
   const navItems = [
     {
-      name: 'Dashboard',
-      href: '/',
+      name: "Dashboard",
       icon: Home,
+      href: "/",
     },
     {
-      name: 'Rooms',
-      href: '/rooms',
-      icon: Bed,
+      name: "Rooms",
+      icon: Building,
+      href: "/rooms",
     },
     {
-      name: 'Tenants',
-      href: '/tenants',
+      name: "Tenants",
       icon: Users,
+      href: "/tenants",
     },
     {
-      name: 'Resources',
-      href: '/resources',
+      name: "Resources",
       icon: Package,
+      href: "/resources",
     },
     {
-      name: 'Finance',
-      href: '/finance',
-      icon: WalletCards,
+      name: "Finance",
+      icon: Wallet,
+      href: "/finance",
     },
     {
-      name: 'Settings',
-      href: '/settings',
+      name: "Stats",
+      icon: BarChart3,
+      href: "/stats",
+    },
+    {
+      name: "Settings",
       icon: Settings,
+      href: "/settings",
     },
   ];
 
+  if (!isMobile) {
+    return (
+      <div className="fixed bottom-0 left-0 w-full bg-background border-t border-border z-50 px-4">
+        <nav className="max-w-3xl mx-auto flex items-center justify-between">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex flex-col items-center gap-1 p-2 text-xs",
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-primary"
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    );
+  }
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t bg-background z-50">
-      <div className="flex justify-around">
-        {navItems.map((item) => {
+    <div className="fixed bottom-0 left-0 w-full bg-background border-t border-border z-50 px-4">
+      <nav className="max-w-3xl mx-auto flex items-center justify-between">
+        {navItems.map((item, index) => {
           const isActive = location.pathname === item.href;
+          
+          // On very small screens, skip some items to prevent overflow
+          if (index > 4 && window.innerWidth < 360) return null;
+          
           return (
             <Link
-              key={item.name}
+              key={item.href}
               to={item.href}
               className={cn(
-                'flex flex-col items-center py-2 px-3 text-xs',
-                isActive 
-                  ? 'text-pgPurple' 
-                  : 'text-muted-foreground hover:text-foreground'
+                "flex flex-col items-center gap-1 p-2 text-xs",
+                isActive
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-primary"
               )}
             >
-              <item.icon
-                className={cn(
-                  'h-5 w-5 mb-1',
-                  isActive ? 'text-pgPurple' : 'text-muted-foreground'
-                )}
-              />
+              <item.icon className="h-5 w-5" />
               <span>{item.name}</span>
             </Link>
           );
         })}
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 };
 

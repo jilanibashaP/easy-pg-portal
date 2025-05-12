@@ -11,6 +11,7 @@ import Tenants from "./pages/Tenants";
 import Resources from "./pages/Resources";
 import Finance from "./pages/Finance";
 import Settings from "./pages/Settings";
+import Stats from "./pages/Stats";
 import BottomNav from "./components/navigation/BottomNav";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/tenants" element={<Tenants />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/finance" element={<Finance />} />
+            <Route path="/stats" element={<Stats />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

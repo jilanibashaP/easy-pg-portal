@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import PageHeader from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, PieChart, Pie, Cell, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { Plus, Search, Filter, WalletCards, Banknote } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ const Finance = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState("all");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [timeFrame, setTimeFrame] = useState("monthly");
   
   const financialSummary = getFinancialSummary();
   
@@ -42,6 +43,42 @@ const Finance = () => {
     name: category,
     value: amount as number
   }));
+
+  // Generate monthly data
+  const generateMonthlyData = () => {
+    const monthlyData = [];
+    const currentYear = new Date().getFullYear();
+    
+    for (let month = 0; month < 12; month++) {
+      const date = new Date(currentYear, month, 1);
+      const monthName = date.toLocaleString('default', { month: 'short' });
+      
+      const monthTransactions = TRANSACTIONS_DATA.filter(transaction => {
+        const transactionDate = new Date(transaction.date);
+        return transactionDate.getMonth() === month && 
+               transactionDate.getFullYear() === currentYear;
+      });
+      
+      const income = monthTransactions
+        .filter(t => t.type === TransactionType.INCOME)
+        .reduce((sum, t) => sum + t.amount, 0);
+        
+      const expenses = monthTransactions
+        .filter(t => t.type === TransactionType.EXPENSE)
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      monthlyData.push({
+        name: monthName,
+        income: income,
+        expenses: expenses,
+        profit: income - expenses
+      });
+    }
+    
+    return monthlyData;
+  };
+
+  const monthlyData = generateMonthlyData();
   
   // Colors for pie chart
   const COLORS = ['#9b87f5', '#7E69AB', '#6E59A5', '#F97316', '#D946EF', '#0EA5E9', '#F2FCE2'];
@@ -104,7 +141,43 @@ const Finance = () => {
         </Card>
       </div>
       
-      <div className="grid gap-6 lg:grid-cols-2 mb-6">
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
+        <Card className="col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Revenue vs Expenses</CardTitle>
+              <CardDescription>Monthly financial performance</CardDescription>
+            </div>
+            <Tabs defaultValue={timeFrame} value={timeFrame} onValueChange={setTimeFrame} className="w-[200px]">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                <TabsTrigger value="yearly">Yearly</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={monthlyData}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip
+                    formatter={(value: any) => [`₹${value.toLocaleString()}`, '']}
+                  />
+                  <Legend />
+                  <Bar dataKey="income" name="Income" fill="#22c55e" />
+                  <Bar dataKey="expenses" name="Expenses" fill="#ef4444" />
+                  <Line type="monotone" dataKey="profit" name="Profit" stroke="#9b87f5" strokeWidth={2} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        
         <Card>
           <CardHeader>
             <CardTitle>Expense Breakdown</CardTitle>
@@ -128,6 +201,9 @@ const Finance = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
+                  <Tooltip 
+                    formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Amount']}
+                  />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -137,34 +213,27 @@ const Finance = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>Monthly Comparison</CardTitle>
+            <CardTitle>Income Trend</CardTitle>
+            <CardDescription>Monthly performance analysis</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-medium">May 2023</p>
-                  <p className="text-sm text-muted-foreground">Income: ₹24,000</p>
-                  <p className="text-sm text-muted-foreground">Expenses: ₹13,500</p>
-                </div>
-                <p className="font-medium text-green-600">Net: ₹10,500</p>
-              </div>
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-medium">April 2023</p>
-                  <p className="text-sm text-muted-foreground">Income: ₹22,500</p>
-                  <p className="text-sm text-muted-foreground">Expenses: ₹15,000</p>
-                </div>
-                <p className="font-medium text-green-600">Net: ₹7,500</p>
-              </div>
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-medium">March 2023</p>
-                  <p className="text-sm text-muted-foreground">Income: ₹21,000</p>
-                  <p className="text-sm text-muted-foreground">Expenses: ₹18,000</p>
-                </div>
-                <p className="font-medium text-green-600">Net: ₹3,000</p>
-              </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={monthlyData}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value: any) => [`₹${value.toLocaleString()}`, '']}
+                  />
+                  <Legend />
+                  <Line type="monotone" dataKey="income" stroke="#22c55e" strokeWidth={2} name="Income" />
+                  <Line type="monotone" dataKey="profit" stroke="#9b87f5" strokeWidth={2} name="Profit" />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>

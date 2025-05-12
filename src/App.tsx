@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Rooms from "./pages/Rooms";
 import Tenants from "./pages/Tenants";
 import Resources from "./pages/Resources";
+import Finance from "./pages/Finance";
 import Settings from "./pages/Settings";
 import BottomNav from "./components/navigation/BottomNav";
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/tenants" element={<Tenants />} />
             <Route path="/resources" element={<Resources />} />
+            <Route path="/finance" element={<Finance />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

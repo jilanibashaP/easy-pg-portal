@@ -31,6 +31,31 @@ export interface Resource {
   lastRestocked: string;
 }
 
+export interface Transaction {
+  id: string;
+  date: string;
+  amount: number;
+  type: TransactionType;
+  category: TransactionCategory;
+  description: string;
+  relatedEntityId?: string; // ID of related tenant, room, or resource
+}
+
+export enum TransactionType {
+  INCOME = "Income",
+  EXPENSE = "Expense"
+}
+
+export enum TransactionCategory {
+  RENT = "Rent",
+  UTILITY = "Utility",
+  SALARY = "Salary",
+  MAINTENANCE = "Maintenance",
+  SUPPLIES = "Supplies",
+  FOOD = "Food",
+  OTHER = "Other"
+}
+
 export enum RoomType {
   SINGLE = "Single",
   DOUBLE = "Double",

@@ -1,5 +1,4 @@
-
-import { Room, Tenant, Resource, ResourceCategory, RoomType } from '@/models/types';
+import { Room, Tenant, Resource, ResourceCategory, RoomType, Transaction, TransactionType, TransactionCategory } from '@/models/types';
 
 export const ROOMS_DATA: Room[] = [
   {
@@ -166,6 +165,93 @@ export const RESOURCES_DATA: Resource[] = [
   },
 ];
 
+export const TRANSACTIONS_DATA: Transaction[] = [
+  {
+    id: '1',
+    date: '2023-05-01',
+    amount: 8000,
+    type: TransactionType.INCOME,
+    category: TransactionCategory.RENT,
+    description: 'Room 101 Rent - John Doe',
+    relatedEntityId: '1' // tenant ID
+  },
+  {
+    id: '2',
+    date: '2023-05-05',
+    amount: 7000,
+    type: TransactionType.INCOME,
+    category: TransactionCategory.RENT,
+    description: 'Room 102 Rent - Jane Smith',
+    relatedEntityId: '2' // tenant ID
+  },
+  {
+    id: '3',
+    date: '2023-05-10',
+    amount: 2500,
+    type: TransactionType.EXPENSE,
+    category: TransactionCategory.UTILITY,
+    description: 'Electricity Bill - May'
+  },
+  {
+    id: '4',
+    date: '2023-05-15',
+    amount: 1800,
+    type: TransactionType.EXPENSE,
+    category: TransactionCategory.UTILITY,
+    description: 'Water Bill - May'
+  },
+  {
+    id: '5',
+    date: '2023-05-20',
+    amount: 5000,
+    type: TransactionType.EXPENSE,
+    category: TransactionCategory.SALARY,
+    description: 'Staff Salary - Cleaning Staff'
+  },
+  {
+    id: '6',
+    date: '2023-05-25',
+    amount: 3500,
+    type: TransactionType.EXPENSE,
+    category: TransactionCategory.MAINTENANCE,
+    description: 'Plumbing Repair - Room 202'
+  },
+  {
+    id: '7',
+    date: '2023-06-01',
+    amount: 9000,
+    type: TransactionType.INCOME,
+    category: TransactionCategory.RENT,
+    description: 'Room 301 Rent - Alex Brown',
+    relatedEntityId: '5' // tenant ID
+  },
+  {
+    id: '8',
+    date: '2023-06-05',
+    amount: 6000,
+    type: TransactionType.INCOME,
+    category: TransactionCategory.RENT,
+    description: 'Room 202 Rent - Emily Davis',
+    relatedEntityId: '6' // tenant ID
+  },
+  {
+    id: '9',
+    date: '2023-06-10',
+    amount: 2000,
+    type: TransactionType.EXPENSE,
+    category: TransactionCategory.SUPPLIES,
+    description: 'Kitchen Supplies'
+  },
+  {
+    id: '10',
+    date: '2023-06-15',
+    amount: 4500,
+    type: TransactionType.EXPENSE,
+    category: TransactionCategory.FOOD,
+    description: 'Monthly Groceries'
+  }
+];
+
 export const getDashboardSummary = () => {
   const totalRooms = ROOMS_DATA.length;
   let totalBeds = 0;
@@ -186,5 +272,44 @@ export const getDashboardSummary = () => {
     occupancyRate,
     totalTenants: TENANTS_DATA.length,
     pendingDues: TENANTS_DATA.filter(t => t.rentDueDate < new Date().getDate()).length,
+  };
+};
+
+export const getFinancialSummary = () => {
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  const currentMonthTransactions = TRANSACTIONS_DATA.filter(transaction => {
+    const transactionDate = new Date(transaction.date);
+    return transactionDate.getMonth() === currentMonth && 
+           transactionDate.getFullYear() === currentYear;
+  });
+  
+  const totalIncome = currentMonthTransactions
+    .filter(t => t.type === TransactionType.INCOME)
+    .reduce((sum, t) => sum + t.amount, 0);
+    
+  const totalExpenses = currentMonthTransactions
+    .filter(t => t.type === TransactionType.EXPENSE)
+    .reduce((sum, t) => sum + t.amount, 0);
+    
+  const netProfit = totalIncome - totalExpenses;
+  
+  // Calculate category-wise expenses
+  const expensesByCategory = {};
+  currentMonthTransactions
+    .filter(t => t.type === TransactionType.EXPENSE)
+    .forEach(t => {
+      if (!expensesByCategory[t.category]) {
+        expensesByCategory[t.category] = 0;
+      }
+      expensesByCategory[t.category] += t.amount;
+    });
+    
+  return {
+    totalIncome,
+    totalExpenses,
+    netProfit,
+    expensesByCategory
   };
 };

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Bed, Users, Package, Settings } from 'lucide-react';
+import { Home, Bed, Users, Package, Settings, WalletCards } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BottomNav = () => {
@@ -27,6 +27,11 @@ const BottomNav = () => {
       name: 'Resources',
       href: '/resources',
       icon: Package,
+    },
+    {
+      name: 'Finance',
+      href: '/finance',
+      icon: WalletCards,
     },
     {
       name: 'Settings',

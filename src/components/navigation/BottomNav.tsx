@@ -24,11 +24,11 @@ const BottomNav = () => {
       icon: Users,
       href: "/tenants",
     },
-    {
-      name: "Resources",
-      icon: Package,
-      href: "/resources",
-    },
+    // {
+    //   name: "Resources",
+    //   icon: Package,
+    //   href: "/resources",
+    // },
     {
       name: "Finance",
       icon: Wallet,

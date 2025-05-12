@@ -15,6 +15,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 const Rooms = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  // const [count, setCount] = useState(0);
   
   const filteredRooms = ROOMS_DATA.filter(room => 
     room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -36,6 +37,7 @@ const Rooms = () => {
   
   const handleRoomClick = (room: Room) => {
     console.log('Room clicked:', room);
+    // setCount(count + 1);
     // Navigate to room details page
   };
 
@@ -45,12 +47,16 @@ const Rooms = () => {
         title="Rooms" 
         subtitle={`Manage all ${ROOMS_DATA.length} rooms`}
         action={
-          <Button size="sm" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add Room
-          </Button>
+          <>
+            <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add Room
+            </Button>
+  
+          </>
         }
       />
       
+      {/* <p>{count && <span className="text-sm text-gray-500">({count})</span>}</p> */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="col-span-2">
           <CardHeader>
@@ -104,6 +110,7 @@ const Rooms = () => {
         </Card>
       </div>
       
+      {/* // Search and Filter */}
       <div className="flex items-center space-x-2 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

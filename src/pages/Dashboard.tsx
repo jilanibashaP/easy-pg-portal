@@ -1,13 +1,16 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Home, Banknote, Percent } from "lucide-react";
 import PageHeader from '@/components/common/PageHeader';
 import StatCard from '@/components/dashboard/StatCard';
-import { getDashboardSummary, rooms } from '@/data/mockData';
+import { getDashboardSummary } from '@/api/data';
+import { ROOMS_DATA } from '@/api/data';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const summary = getDashboardSummary();
   
   // Generate occupancy data for last 7 days
@@ -21,6 +24,10 @@ const Dashboard = () => {
     };
   });
 
+  const navigateTo = (path: string) => {
+    navigate(path);
+  };
+
   return (
     <div className="pb-16">
       <PageHeader 
@@ -29,33 +36,41 @@ const Dashboard = () => {
       />
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="Total Rooms"
-          value={summary.totalRooms}
-          icon={<Home />}
-        />
-        <StatCard
-          title="Occupancy Rate"
-          value={`${summary.occupancyRate}%`}
-          icon={<Percent />}
-          trend={{ value: 5, isPositive: true }}
-        />
-        <StatCard
-          title="Total Tenants"
-          value={summary.totalTenants}
-          icon={<Users />}
-          trend={{ value: 12, isPositive: true }}
-        />
-        <StatCard
-          title="Pending Dues"
-          value={summary.pendingDues}
-          icon={<Banknote />}
-          trend={{ value: 2, isPositive: false }}
-        />
+        <div onClick={() => navigateTo('/rooms')} className="cursor-pointer">
+          <StatCard
+            title="Total Rooms"
+            value={summary.totalRooms}
+            icon={<Home />}
+          />
+        </div>
+        <div onClick={() => navigateTo('/rooms')} className="cursor-pointer">
+          <StatCard
+            title="Occupancy Rate"
+            value={`${summary.occupancyRate}%`}
+            icon={<Percent />}
+            trend={{ value: 5, isPositive: true }}
+          />
+        </div>
+        <div onClick={() => navigateTo('/tenants')} className="cursor-pointer">
+          <StatCard
+            title="Total Tenants"
+            value={summary.totalTenants}
+            icon={<Users />}
+            trend={{ value: 12, isPositive: true }}
+          />
+        </div>
+        <div onClick={() => navigateTo('/tenants')} className="cursor-pointer">
+          <StatCard
+            title="Pending Dues"
+            value={summary.pendingDues}
+            icon={<Banknote />}
+            trend={{ value: 2, isPositive: false }}
+          />
+        </div>
       </div>
       
       <div className="grid gap-6 md:grid-cols-2 mb-6">
-        <Card className="col-span-1">
+        <Card className="col-span-1 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigateTo('/rooms')}>
           <CardHeader>
             <CardTitle>Occupancy Overview</CardTitle>
             <CardDescription>
@@ -91,14 +106,14 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card className="col-span-1">
+        <Card className="col-span-1 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigateTo('/rooms')}>
           <CardHeader>
             <CardTitle>Room Status</CardTitle>
             <CardDescription>Quick overview of room availability</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {rooms.map(room => (
+              {ROOMS_DATA.map(room => (
                 <div key={room.id} className="flex justify-between items-center">
                   <div>
                     <p className="font-medium">{room.name}</p>
@@ -119,7 +134,7 @@ const Dashboard = () => {
         </Card>
       </div>
       
-      <Card className="mb-6">
+      <Card className="mb-6 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigateTo('/tenants')}>
         <CardHeader>
           <CardTitle>Recent Activities</CardTitle>
           <CardDescription>Latest updates in your PG</CardDescription>

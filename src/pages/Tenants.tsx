@@ -6,19 +6,19 @@ import { Plus, Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { tenants, rooms } from '@/data/mockData';
+import { TENANTS_DATA, ROOMS_DATA } from '@/api/data';
 
 const Tenants = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
-  const filteredTenants = tenants.filter(tenant => 
+  const filteredTenants = TENANTS_DATA.filter(tenant => 
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tenant.contactNumber.includes(searchQuery) ||
     tenant.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   const getRoomNameById = (roomId: string) => {
-    const room = rooms.find(room => room.id === roomId);
+    const room = ROOMS_DATA.find(room => room.id === roomId);
     return room ? room.name : 'Unknown';
   };
 
@@ -26,7 +26,7 @@ const Tenants = () => {
     <div className="pb-16">
       <PageHeader 
         title="Tenants" 
-        subtitle={`Manage all ${tenants.length} tenants`}
+        subtitle={`Manage all ${TENANTS_DATA.length} tenants`}
         action={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add Tenant</Button>}
       />
       

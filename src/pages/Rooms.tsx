@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import RoomCard from '@/components/rooms/RoomCard';
-import { rooms } from '@/data/mockData';
+import { ROOMS_DATA } from '@/api/data';
 import { Room } from '@/models/types';
 
 const Rooms = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
-  const filteredRooms = rooms.filter(room => 
+  const filteredRooms = ROOMS_DATA.filter(room => 
     room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     room.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -25,7 +25,7 @@ const Rooms = () => {
     <div className="pb-16">
       <PageHeader 
         title="Rooms" 
-        subtitle={`Manage all ${rooms.length} rooms`}
+        subtitle={`Manage all ${ROOMS_DATA.length} rooms`}
         action={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add Room</Button>}
       />
       

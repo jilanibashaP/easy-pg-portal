@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import ResourceCard from '@/components/resources/ResourceCard';
-import { resources } from '@/data/mockData';
+import { RESOURCES_DATA } from '@/api/data';
 import { Resource } from '@/models/types';
 
 const Resources = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
-  const filteredResources = resources.filter(resource => 
+  const filteredResources = RESOURCES_DATA.filter(resource => 
     resource.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     resource.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -25,7 +25,7 @@ const Resources = () => {
     <div className="pb-16">
       <PageHeader 
         title="Resources" 
-        subtitle={`Manage all ${resources.length} resources`}
+        subtitle={`Manage all ${RESOURCES_DATA.length} resources`}
         action={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add Resource</Button>}
       />
       

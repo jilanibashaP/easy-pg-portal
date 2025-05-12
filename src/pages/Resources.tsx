@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import ResourceCard from '@/components/resources/ResourceCard';
 import { RESOURCES_DATA } from '@/api/data';
 import { Resource } from '@/models/types';
+import AddResourceDialog from '@/components/resources/AddResourceDialog';
 
 const Resources = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   
   const filteredResources = RESOURCES_DATA.filter(resource => 
     resource.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -26,7 +28,11 @@ const Resources = () => {
       <PageHeader 
         title="Resources" 
         subtitle={`Manage all ${RESOURCES_DATA.length} resources`}
-        action={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add Resource</Button>}
+        action={
+          <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Resource
+          </Button>
+        }
       />
       
       <div className="flex items-center space-x-2 mb-6">
@@ -53,6 +59,8 @@ const Resources = () => {
           />
         ))}
       </div>
+
+      <AddResourceDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </div>
   );
 };

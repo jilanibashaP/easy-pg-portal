@@ -11,10 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { TRANSACTIONS_DATA, getFinancialSummary } from '@/api/data';
 import { Transaction, TransactionType, TransactionCategory } from '@/models/types';
+import AddTransactionDialog from '@/components/finance/AddTransactionDialog';
 
 const Finance = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState("all");
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   
   const financialSummary = getFinancialSummary();
   
@@ -49,7 +51,11 @@ const Finance = () => {
       <PageHeader 
         title="Finance" 
         subtitle="Track income, expenses and manage your finances"
-        action={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add Transaction</Button>}
+        action={
+          <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Transaction
+          </Button>
+        }
       />
       
       <div className="grid gap-4 md:grid-cols-3 mb-6">
@@ -248,6 +254,8 @@ const Finance = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      <AddTransactionDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </div>
   );
 };

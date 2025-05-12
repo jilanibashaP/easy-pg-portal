@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import RoomCard from '@/components/rooms/RoomCard';
 import { ROOMS_DATA } from '@/api/data';
 import { Room } from '@/models/types';
+import AddRoomDialog from '@/components/rooms/AddRoomDialog';
 
 const Rooms = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   
   const filteredRooms = ROOMS_DATA.filter(room => 
     room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -26,7 +28,11 @@ const Rooms = () => {
       <PageHeader 
         title="Rooms" 
         subtitle={`Manage all ${ROOMS_DATA.length} rooms`}
-        action={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add Room</Button>}
+        action={
+          <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Room
+          </Button>
+        }
       />
       
       <div className="flex items-center space-x-2 mb-6">
@@ -53,6 +59,8 @@ const Rooms = () => {
           />
         ))}
       </div>
+
+      <AddRoomDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </div>
   );
 };

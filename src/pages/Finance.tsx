@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { TRANSACTIONS_DATA, getFinancialSummary } from '@/api/data';
 import { Transaction, TransactionType, TransactionCategory } from '@/models/types';
 import AddTransactionDialog from '@/components/finance/AddTransactionDialog';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer } from '@/components/ui/chart';
 
 const Finance = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,6 +82,18 @@ const Finance = () => {
     return null;
   };
 
+  // Format date to display in a more readable format
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <div className="pb-16">
       <PageHeader title="Finance" subtitle="Track income, expenses and manage your finances" action={<Button size="sm" onClick={() => setAddDialogOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Transaction</Button>} />
@@ -123,11 +135,11 @@ const Finance = () => {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Monthly Income vs Expenses Chart */}
+        {/* Monthly Income vs Expenses Chart - with simplified explanation */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
-            <CardTitle>Income vs Expenses</CardTitle>
-            <CardDescription>Monthly comparison for the current year</CardDescription>
+            <CardTitle>Money In vs Money Out</CardTitle>
+            <CardDescription>How much money came in and went out each month</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ChartContainer config={chartConfig}>
@@ -144,7 +156,8 @@ const Finance = () => {
                             <p className="font-medium">{props.label}</p>
                             {props.payload.map((entry, index) => (
                               <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                {entry.name}: ₹{entry.value.toLocaleString()}
+                                {entry.name === "income" ? "Money In: " : entry.name === "expenses" ? "Money Out: " : "Savings: "}
+                                ₹{entry.value.toLocaleString()}
                               </p>
                             ))}
                           </div>
@@ -153,20 +166,30 @@ const Finance = () => {
                       return null;
                     }}
                   />
-                  <Legend />
-                  <Bar dataKey="income" name="Income" fill={chartConfig.income.color} />
-                  <Bar dataKey="expenses" name="Expenses" fill={chartConfig.expenses.color} />
+                  <Legend formatter={(value) => value === "income" ? "Money In" : value === "expenses" ? "Money Out" : "Savings"} />
+                  <Bar dataKey="income" name="income" fill={chartConfig.income.color} />
+                  <Bar dataKey="expenses" name="expenses" fill={chartConfig.expenses.color} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
+            <div className="mt-4 flex justify-center gap-6 text-sm">
+              <div className="flex items-center">
+                <span className="inline-block w-3 h-3 mr-1 bg-green-500 rounded-sm"></span>
+                <span>Money In (Income)</span>
+              </div>
+              <div className="flex items-center">
+                <span className="inline-block w-3 h-3 mr-1 bg-red-500 rounded-sm"></span>
+                <span>Money Out (Expenses)</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         {/* Expense Breakdown Chart */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
-            <CardTitle>Expense Breakdown</CardTitle>
-            <CardDescription>Where your money is going</CardDescription>
+            <CardTitle>Where Money is Going</CardTitle>
+            <CardDescription>Main areas where money is being spent</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px] flex items-center justify-center">
             <ChartContainer config={chartConfig} className="w-full max-w-[350px]">
@@ -229,7 +252,7 @@ const Finance = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Date & Time</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
@@ -245,7 +268,7 @@ const Finance = () => {
                 ) : (
                   sortedTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
-                      <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatDate(transaction.date)}</TableCell>
                       <TableCell>{transaction.description}</TableCell>
                       <TableCell>
                         <Badge variant={transaction.type === TransactionType.INCOME ? "outline" : "secondary"}>

@@ -68,6 +68,20 @@ const Finance = () => {
     color: chartConfig[category.toLowerCase()]?.color || '#6b7280'
   }));
 
+  // Custom tooltip renderer for pie chart
+  const renderCustomPieTooltip = (props) => {
+    if (props.active && props.payload && props.payload.length) {
+      const data = props.payload[0].payload;
+      return (
+        <div className="bg-background p-2 border rounded-md shadow-md">
+          <p className="font-medium">{data.name}</p>
+          <p className="text-sm">₹{data.value.toLocaleString()}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="pb-16">
       <PageHeader title="Finance" subtitle="Track income, expenses and manage your finances" action={<Button size="sm" onClick={() => setAddDialogOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Transaction</Button>} />
@@ -122,7 +136,23 @@ const Finance = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <ChartTooltip content={(props) => <ChartTooltipContent {...props} />} />
+                  <Tooltip 
+                    content={(props) => {
+                      if (props.active && props.payload && props.payload.length) {
+                        return (
+                          <div className="bg-background p-2 border rounded-md shadow-md">
+                            <p className="font-medium">{props.label}</p>
+                            {props.payload.map((entry, index) => (
+                              <p key={index} className="text-sm" style={{ color: entry.color }}>
+                                {entry.name}: ₹{entry.value.toLocaleString()}
+                              </p>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
                   <Legend />
                   <Bar dataKey="income" name="Income" fill={chartConfig.income.color} />
                   <Bar dataKey="expenses" name="Expenses" fill={chartConfig.expenses.color} />
@@ -157,18 +187,7 @@ const Finance = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <ChartTooltip content={(props) => {
-                    if (props.active && props.payload && props.payload.length) {
-                      const data = props.payload[0].payload;
-                      return (
-                        <div className="bg-background p-2 border rounded-md shadow-md">
-                          <p className="font-medium">{data.name}</p>
-                          <p className="text-sm">₹{data.value.toLocaleString()}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }} />
+                  <Tooltip content={renderCustomPieTooltip} />
                 </PieChart>
               </ResponsiveContainer>
             </ChartContainer>

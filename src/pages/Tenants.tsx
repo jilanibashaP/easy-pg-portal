@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TENANTS_DATA, ROOMS_DATA } from '@/api/data';
+import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
 
 const Tenants = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
   
   const filteredTenants = TENANTS_DATA.filter(tenant => 
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -22,12 +25,19 @@ const Tenants = () => {
     return room ? room.name : 'Unknown';
   };
 
+  const handleAddTenant = () => {
+    // For now, just show a toast notification
+    toast.info("Add Tenant feature is coming soon!");
+    // Later this can navigate to a form or open a dialog
+    // navigate('/add-tenant');
+  };
+
   return (
     <div className="pb-16">
       <PageHeader 
         title="Tenants" 
         subtitle={`Manage all ${TENANTS_DATA.length} tenants`}
-        action={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add Tenant</Button>}
+        action={<Button size="sm" onClick={handleAddTenant}><Plus className="mr-2 h-4 w-4" /> Add Tenant</Button>}
       />
       
       <div className="flex items-center space-x-2 mb-6">

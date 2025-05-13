@@ -5,20 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { LineChart, Line, PieChart, Pie, Cell, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { Plus, Search, Filter, WalletCards, Banknote } from 'lucide-react';
+import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { Plus, Search, Filter, InfoIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { TRANSACTIONS_DATA, getFinancialSummary } from '@/api/data';
-import { Transaction, TransactionType, TransactionCategory } from '@/models/types';
+import { Transaction, TransactionType } from '@/models/types';
 import AddTransactionDialog from '@/components/finance/AddTransactionDialog';
 import { ChartContainer } from '@/components/ui/chart';
+import { Tooltip as TooltipUI } from '@/components/ui/tooltip';
+import { TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const Finance = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [timeFrame, setTimeFrame] = useState('monthly');
 
   const financialSummary = getFinancialSummary();
 
@@ -32,6 +33,7 @@ const Finance = () => {
 
   const sortedTransactions = [...filteredTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // Generate monthly data with simplified labels
   const monthlyData = Array.from({ length: 12 }, (_, month) => {
     const date = new Date(new Date().getFullYear(), month, 1);
     const monthName = date.toLocaleString('default', { month: 'short' });
@@ -44,43 +46,27 @@ const Finance = () => {
       .filter(t => new Date(t.date).getMonth() === month && t.type === TransactionType.EXPENSE)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    return { name: monthName, income, expenses, profit: income - expenses };
+    return { name: monthName, moneyIn: income, moneyOut: expenses, savings: income - expenses };
   });
 
-  // Chart configurations for consistent colors
+  // Chart configurations with user-friendly colors
   const chartConfig = {
-    income: { color: '#22c55e' },
-    expenses: { color: '#ef4444' },
-    profit: { color: '#9b87f5' },
-    rent: { color: '#3b82f6' },
-    utility: { color: '#f59e0b' },
-    salary: { color: '#ec4899' },
-    maintenance: { color: '#8b5cf6' },
-    supplies: { color: '#14b8a6' },
-    food: { color: '#f97316' },
-    other: { color: '#6b7280' }
+    moneyIn: { color: '#22c55e' },  // Green for income/money in
+    moneyOut: { color: '#ef4444' },  // Red for expenses/money out
+    savings: { color: '#9b87f5' },   // Purple for savings/profit
   };
 
-  // Data for expense breakdown chart
+  // Data for expense breakdown chart with simplified labels
   const expenseData = Object.entries(financialSummary.expensesByCategory).map(([category, amount]) => ({
     name: category,
     value: amount,
-    color: chartConfig[category.toLowerCase()]?.color || '#6b7280'
+    color: (['Rent', 'Utility', 'Maintenance', 'Supplies', 'Food'].includes(category)) 
+      ? chartConfig[category.toLowerCase()]?.color || (['Rent', 'Utility'].includes(category) ? '#3b82f6' : 
+         ['Maintenance'].includes(category) ? '#8b5cf6' : 
+         ['Supplies'].includes(category) ? '#14b8a6' : 
+         ['Food'].includes(category) ? '#f97316' : '#6b7280')
+      : '#6b7280'
   }));
-
-  // Custom tooltip renderer for pie chart
-  const renderCustomPieTooltip = (props) => {
-    if (props.active && props.payload && props.payload.length) {
-      const data = props.payload[0].payload;
-      return (
-        <div className="bg-background p-2 border rounded-md shadow-md">
-          <p className="font-medium">{data.name}</p>
-          <p className="text-sm">₹{data.value.toLocaleString()}</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   // Format date to display in a more readable format
   const formatDate = (dateString) => {
@@ -96,50 +82,69 @@ const Finance = () => {
 
   return (
     <div className="pb-16">
-      <PageHeader title="Finance" subtitle="Track income, expenses and manage your finances" action={<Button size="sm" onClick={() => setAddDialogOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Transaction</Button>} />
+      <PageHeader 
+        title="Finance" 
+        subtitle="Easy tracking of money in and out" 
+        action={<Button size="sm" onClick={() => setAddDialogOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Transaction</Button>} 
+      />
 
-      {/* Financial Summary Cards */}
+      {/* Financial Summary Cards - Simplified Language */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Total Income</CardTitle>
+            <CardTitle className="text-lg font-medium">Money In</CardTitle>
+            <CardDescription>Total income this month</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-500">₹{financialSummary.totalIncome.toLocaleString()}</div>
-            <p className="text-sm text-muted-foreground">Current month</p>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Total Expenses</CardTitle>
+            <CardTitle className="text-lg font-medium">Money Out</CardTitle>
+            <CardDescription>Total expenses this month</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">₹{financialSummary.totalExpenses.toLocaleString()}</div>
-            <p className="text-sm text-muted-foreground">Current month</p>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Net Profit</CardTitle>
+            <CardTitle className="text-lg font-medium">Savings</CardTitle>
+            <CardDescription>Money left after expenses</CardDescription>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${financialSummary.netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               ₹{financialSummary.netProfit.toLocaleString()}
             </div>
-            <p className="text-sm text-muted-foreground">Current month</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Section */}
+      {/* Charts Section - With Simplified Visuals and Labels */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Monthly Income vs Expenses Chart - with simplified explanation */}
+        {/* Monthly Income vs Expenses Chart - with intuitive labels */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
-            <CardTitle>Money In vs Money Out</CardTitle>
-            <CardDescription>How much money came in and went out each month</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Money Flow By Month</CardTitle>
+                <CardDescription>How much money comes in and goes out each month</CardDescription>
+              </div>
+              <TooltipProvider>
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <InfoIcon size={16} className="text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Green bars show money received. Red bars show expenses. 
+                    The higher the green bar, the more money you earned that month.</p>
+                  </TooltipContent>
+                </TooltipUI>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ChartContainer config={chartConfig}>
@@ -153,10 +158,10 @@ const Finance = () => {
                       if (props.active && props.payload && props.payload.length) {
                         return (
                           <div className="bg-background p-2 border rounded-md shadow-md">
-                            <p className="font-medium">{props.label}</p>
+                            <p className="font-medium">{props.label} Month</p>
                             {props.payload.map((entry, index) => (
                               <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                {entry.name === "income" ? "Money In: " : entry.name === "expenses" ? "Money Out: " : "Savings: "}
+                                {entry.name === "moneyIn" ? "Money In: " : entry.name === "moneyOut" ? "Money Out: " : "Savings: "}
                                 ₹{entry.value.toLocaleString()}
                               </p>
                             ))}
@@ -166,30 +171,45 @@ const Finance = () => {
                       return null;
                     }}
                   />
-                  <Legend formatter={(value) => value === "income" ? "Money In" : value === "expenses" ? "Money Out" : "Savings"} />
-                  <Bar dataKey="income" name="income" fill={chartConfig.income.color} />
-                  <Bar dataKey="expenses" name="expenses" fill={chartConfig.expenses.color} />
+                  <Legend formatter={(value) => value === "moneyIn" ? "Money In" : value === "moneyOut" ? "Money Out" : "Savings"} />
+                  <Bar dataKey="moneyIn" name="moneyIn" fill={chartConfig.moneyIn.color} />
+                  <Bar dataKey="moneyOut" name="moneyOut" fill={chartConfig.moneyOut.color} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
             <div className="mt-4 flex justify-center gap-6 text-sm">
               <div className="flex items-center">
                 <span className="inline-block w-3 h-3 mr-1 bg-green-500 rounded-sm"></span>
-                <span>Money In (Income)</span>
+                <span>Money Coming In</span>
               </div>
               <div className="flex items-center">
                 <span className="inline-block w-3 h-3 mr-1 bg-red-500 rounded-sm"></span>
-                <span>Money Out (Expenses)</span>
+                <span>Money Going Out</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Expense Breakdown Chart */}
+        {/* Expense Breakdown Chart - With simpler labels */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
-            <CardTitle>Where Money is Going</CardTitle>
-            <CardDescription>Main areas where money is being spent</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Where Money is Going</CardTitle>
+                <CardDescription>Main areas where money is being spent</CardDescription>
+              </div>
+              <TooltipProvider>
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <InfoIcon size={16} className="text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>This pie chart shows what you're spending money on. 
+                    Larger pieces mean more money spent in that category.</p>
+                  </TooltipContent>
+                </TooltipUI>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent className="h-[300px] flex items-center justify-center">
             <ChartContainer config={chartConfig} className="w-full max-w-[350px]">
@@ -210,7 +230,20 @@ const Finance = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip content={renderCustomPieTooltip} />
+                  <Tooltip 
+                    content={(props) => {
+                      if (props.active && props.payload && props.payload.length) {
+                        const data = props.payload[0].payload;
+                        return (
+                          <div className="bg-background p-2 border rounded-md shadow-md">
+                            <p className="font-medium">{data.name}</p>
+                            <p className="text-sm">₹{data.value.toLocaleString()}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -218,7 +251,7 @@ const Finance = () => {
         </Card>
       </div>
 
-      {/* Transaction List */}
+      {/* Transaction List - Now with Created At column */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Transaction History</CardTitle>
@@ -226,8 +259,8 @@ const Finance = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="income">Income</TabsTrigger>
-                <TabsTrigger value="expense">Expenses</TabsTrigger>
+                <TabsTrigger value="income">Money In</TabsTrigger>
+                <TabsTrigger value="expense">Money Out</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -252,7 +285,7 @@ const Finance = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Created At</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead className="text-right">Amount</TableHead>

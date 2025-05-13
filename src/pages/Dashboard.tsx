@@ -3,7 +3,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Home, Banknote, Percent } from "lucide-react";
+import { Users, Home, Banknote, Percent, Bed } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import PageHeader from '@/components/common/PageHeader';
 import StatCard from '@/components/dashboard/StatCard';
 import { getDashboardSummary } from '@/api/data';
@@ -23,6 +24,9 @@ const Dashboard = () => {
       occupancy: Math.floor(Math.random() * (summary.occupancyRate + 10 - (summary.occupancyRate - 10)) + (summary.occupancyRate - 10))
     };
   });
+
+  // Get available rooms
+  const availableRooms = ROOMS_DATA.filter(room => room.occupiedBeds < room.totalBeds);
 
   const navigateTo = (path: string) => {
     navigate(path);
@@ -68,6 +72,43 @@ const Dashboard = () => {
           />
         </div>
       </div>
+      
+      {/* Available Rooms Section */}
+      <Card className="mb-6 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigateTo('/rooms')}>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Available Rooms</CardTitle>
+            <CardDescription>
+              {availableRooms.length} rooms with vacant beds
+            </CardDescription>
+          </div>
+          <Bed className="h-5 w-5 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {availableRooms.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                No available rooms at the moment.
+              </div>
+            ) : (
+              availableRooms.map(room => (
+                <div key={room.id} className="flex justify-between items-center p-3 rounded-lg border hover:bg-accent/50">
+                  <div>
+                    <p className="font-medium">{room.name}</p>
+                    <p className="text-sm text-muted-foreground">{room.type}, Floor {room.floor}</p>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <Badge variant="outline" className="bg-green-50">
+                      {room.totalBeds - room.occupiedBeds} Beds Available
+                    </Badge>
+                    <p className="text-sm font-medium mt-1">₹{room.monthlyRent}/month</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
       
       <div className="grid gap-6 md:grid-cols-2 mb-6">
         <Card className="col-span-1 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigateTo('/rooms')}>

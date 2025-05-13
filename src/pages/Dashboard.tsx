@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Home, Banknote, Percent, Bed } from "lucide-react";
+import { Users, Home, Banknote, Percent } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from '@/components/common/PageHeader';
 import StatCard from '@/components/dashboard/StatCard';
@@ -82,7 +82,7 @@ const Dashboard = () => {
               {availableRooms.length} rooms with vacant beds
             </CardDescription>
           </div>
-          <Bed className="h-5 w-5 text-muted-foreground" />
+          <Home className="h-5 w-5 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -91,7 +91,7 @@ const Dashboard = () => {
                 No available rooms at the moment.
               </div>
             ) : (
-              availableRooms.map(room => (
+              availableRooms.slice(0, 3).map(room => (
                 <div key={room.id} className="flex justify-between items-center p-3 rounded-lg border hover:bg-accent/50">
                   <div>
                     <p className="font-medium">{room.name}</p>
@@ -106,75 +106,58 @@ const Dashboard = () => {
                 </div>
               ))
             )}
+            {availableRooms.length > 3 && (
+              <div className="text-center">
+                <button 
+                  onClick={() => navigateTo('/rooms')} 
+                  className="text-sm text-primary hover:underline"
+                >
+                  View all {availableRooms.length} available rooms
+                </button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
       
-      <div className="grid gap-6 md:grid-cols-2 mb-6">
-        <Card className="col-span-1 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigateTo('/rooms')}>
-          <CardHeader>
-            <CardTitle>Occupancy Overview</CardTitle>
-            <CardDescription>
-              Total beds: {summary.totalBeds}, Occupied: {summary.occupiedBeds}, Vacant: {summary.vacantBeds}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={occupancyData}>
-                  <XAxis
-                    dataKey="name"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `${value}%`}
-                  />
-                  <Bar
-                    dataKey="occupancy"
-                    fill="#9b87f5"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="col-span-1 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigateTo('/rooms')}>
-          <CardHeader>
-            <CardTitle>Room Status</CardTitle>
-            <CardDescription>Quick overview of room availability</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {ROOMS_DATA.map(room => (
-                <div key={room.id} className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{room.name}</p>
-                    <p className="text-sm text-muted-foreground">{room.type}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{room.occupiedBeds}/{room.totalBeds}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {room.totalBeds === room.occupiedBeds 
-                        ? 'Full' 
-                        : `${room.totalBeds - room.occupiedBeds} Available`}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Occupancy Overview */}
+      <Card className="mb-6 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigateTo('/stats')}>
+        <CardHeader>
+          <CardTitle>Occupancy Overview</CardTitle>
+          <CardDescription>
+            Total beds: {summary.totalBeds}, Occupied: {summary.occupiedBeds}, Vacant: {summary.vacantBeds}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={occupancyData}>
+                <XAxis
+                  dataKey="name"
+                  stroke="#888888"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="#888888"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <Bar
+                  dataKey="occupancy"
+                  fill="#9b87f5"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
       
+      {/* Recent Activities */}
       <Card className="mb-6 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigateTo('/tenants')}>
         <CardHeader>
           <CardTitle>Recent Activities</CardTitle>
@@ -195,13 +178,6 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground">₹8,000 received from John Doe</p>
               </div>
               <p className="text-sm text-muted-foreground">Yesterday</p>
-            </div>
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <p className="font-medium">Resource restock</p>
-                <p className="text-sm text-muted-foreground">20 new bed sheets added to inventory</p>
-              </div>
-              <p className="text-sm text-muted-foreground">2 days ago</p>
             </div>
           </div>
         </CardContent>

@@ -13,9 +13,10 @@ import AddTenantDialog from '@/components/tenants/AddTenantDialog';
 const Tenants = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [tenants, setTenants] = useState(TENANTS_DATA);
   const navigate = useNavigate();
   
-  const filteredTenants = TENANTS_DATA.filter(tenant => 
+  const filteredTenants = tenants.filter(tenant => 
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tenant.contactNumber.includes(searchQuery) ||
     tenant.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -30,11 +31,15 @@ const Tenants = () => {
     setAddDialogOpen(true);
   };
 
+  const handleTenantAdded = (newTenant) => {
+    setTenants(prevTenants => [...prevTenants, newTenant]);
+  };
+
   return (
     <div className="pb-16">
       <PageHeader 
         title="Tenants" 
-        subtitle={`Manage all ${TENANTS_DATA.length} tenants`}
+        subtitle={`Manage all ${tenants.length} tenants`}
         action={<Button size="sm" onClick={handleAddTenant}><Plus className="mr-2 h-4 w-4" /> Add Tenant</Button>}
       />
       
@@ -95,7 +100,11 @@ const Tenants = () => {
         })}
       </div>
 
-      <AddTenantDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <AddTenantDialog 
+        open={addDialogOpen} 
+        onOpenChange={setAddDialogOpen}
+        onTenantAdded={handleTenantAdded}
+      />
     </div>
   );
 };

@@ -165,7 +165,7 @@ const AddTenantDialog = ({ open, onOpenChange }: AddTenantDialogProps) => {
                     <FormLabel>Bed Number</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      value={field.value?.toString() || undefined}
                       disabled={!selectedRoomId || availableBeds.length === 0}
                     >
                       <FormControl>

@@ -15,8 +15,9 @@ const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   contactNumber: z.string().min(10, { message: "Phone number must be valid." }),
   roomId: z.string({required_error: "Please select a room."}),
-  bedNumber: z.string({required_error: "Please select a bed."})
-    .transform((val) => parseInt(val, 10)), // Transform string to number
+  bedNumber: z.coerce.number({required_error: "Please select a bed."})
+    .int()
+    .positive(),
   joiningDate: z.string(),
   rentDueDate: z.string().transform((val) => parseInt(val, 10)).refine((val) => val >= 1 && val <= 31, {
     message: "Rent due date must be between 1 and 31."
@@ -160,12 +161,12 @@ const AddTenantDialog = ({ open, onOpenChange }: AddTenantDialogProps) => {
               <FormField
                 control={form.control}
                 name="bedNumber"
-                render={({ field: { onChange, value, ...restField } }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bed Number</FormLabel>
                     <Select 
-                      onValueChange={onChange} 
-                      value={value ? value.toString() : undefined}
+                      onValueChange={(value) => field.onChange(Number(value))} 
+                      value={field.value?.toString()}
                       disabled={!selectedRoomId || availableBeds.length === 0}
                     >
                       <FormControl>

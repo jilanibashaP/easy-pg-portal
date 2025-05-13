@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,8 @@ const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   contactNumber: z.string().min(10, { message: "Phone number must be valid." }),
   roomId: z.string({required_error: "Please select a room."}),
-  bedNumber: z.string({required_error: "Please select a bed."}),
+  bedNumber: z.string({required_error: "Please select a bed."})
+    .transform((val) => parseInt(val, 10)), // Transform string to number
   joiningDate: z.string(),
   rentDueDate: z.string().transform((val) => parseInt(val, 10)).refine((val) => val >= 1 && val <= 31, {
     message: "Rent due date must be between 1 and 31."

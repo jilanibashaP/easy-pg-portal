@@ -7,9 +7,11 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
   ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend 
 } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { ROOMS_DATA, TRANSACTIONS_DATA } from '@/api/data';
 import { TransactionType } from '@/models/types';
+import { InfoIcon } from 'lucide-react';
+import { TooltipProvider, Tooltip as TooltipUI, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const Stats = () => {
   const [timeFrame, setTimeFrame] = useState("monthly");
@@ -210,7 +212,21 @@ const Stats = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="rounded-lg border border-border/50 bg-background p-2 shadow-md">
+                            <p className="font-medium">{data.name} rooms</p>
+                            <p className="text-sm">{data.value} of {totalRooms} rooms</p>
+                            <p className="text-sm">{((data.value / totalRooms) * 100).toFixed(0)}% of total</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -235,8 +251,22 @@ const Stats = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>
           <CardHeader>
-            <CardTitle>Expense Breakdown</CardTitle>
-            <CardDescription>Current month by category</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Expense Breakdown</CardTitle>
+                <CardDescription>Current month by category</CardDescription>
+              </div>
+              <TooltipProvider>
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <InfoIcon size={16} className="text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>This chart shows where money is being spent this month.</p>
+                  </TooltipContent>
+                </TooltipUI>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-[250px]">
@@ -268,8 +298,22 @@ const Stats = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>Revenue Growth</CardTitle>
-            <CardDescription>Monthly trend analysis</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Revenue Growth</CardTitle>
+                <CardDescription>Monthly trend analysis</CardDescription>
+              </div>
+              <TooltipProvider>
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <InfoIcon size={16} className="text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>This chart shows how revenue has grown over time.</p>
+                  </TooltipContent>
+                </TooltipUI>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-[250px]">
@@ -294,8 +338,22 @@ const Stats = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Revenue vs Expenses</CardTitle>
-          <CardDescription>Comparative growth analysis</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Money In vs Money Out</CardTitle>
+              <CardDescription>Monthly comparison for the current year</CardDescription>
+            </div>
+            <TooltipProvider>
+              <TooltipUI>
+                <TooltipTrigger asChild>
+                  <InfoIcon size={16} className="text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Green line shows money coming in each month. Red line shows money going out. Purple line shows what's left (profit).</p>
+                </TooltipContent>
+              </TooltipUI>
+            </TooltipProvider>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
@@ -307,13 +365,47 @@ const Stats = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} name="Revenue" />
-                <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Expenses" />
-                <Line type="monotone" dataKey="profit" stroke="#9b87f5" strokeWidth={2} name="Profit" />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="rounded-lg border border-border/50 bg-background p-2 shadow-md">
+                          <p className="font-medium">{payload[0].payload.name}</p>
+                          <p className="text-sm text-green-600">
+                            Money In: ₹{payload[0].value?.toLocaleString()}
+                          </p>
+                          <p className="text-sm text-red-500">
+                            Money Out: ₹{payload[1].value?.toLocaleString()}
+                          </p>
+                          <p className="text-sm font-medium text-purple-500">
+                            Left Over: ₹{payload[2].value?.toLocaleString()}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend formatter={value => value === "revenue" ? "Money In" : value === "expenses" ? "Money Out" : "Left Over"} />
+                <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} name="revenue" />
+                <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="expenses" />
+                <Line type="monotone" dataKey="profit" stroke="#9b87f5" strokeWidth={2} name="profit" />
               </LineChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-4 flex justify-center gap-6 text-sm">
+            <div className="flex items-center">
+              <span className="inline-block w-3 h-3 mr-1 bg-green-500 rounded-sm"></span>
+              <span>Money Coming In</span>
+            </div>
+            <div className="flex items-center">
+              <span className="inline-block w-3 h-3 mr-1 bg-red-500 rounded-sm"></span>
+              <span>Money Going Out</span>
+            </div>
+            <div className="flex items-center">
+              <span className="inline-block w-3 h-3 mr-1 bg-purple-500 rounded-sm"></span>
+              <span>What's Left Over</span>
+            </div>
           </div>
         </CardContent>
       </Card>

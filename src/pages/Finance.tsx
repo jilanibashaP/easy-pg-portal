@@ -251,7 +251,7 @@ const Finance = () => {
         </Card>
       </div>
 
-      {/* Transaction List - Now with Created At column */}
+      {/* Transaction List - now with Created At column explicitly added */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Transaction History</CardTitle>

@@ -8,10 +8,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TENANTS_DATA, ROOMS_DATA } from '@/api/data';
 import { useNavigate } from 'react-router-dom';
-import { toast } from "sonner";
+import AddTenantDialog from '@/components/tenants/AddTenantDialog';
 
 const Tenants = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const navigate = useNavigate();
   
   const filteredTenants = TENANTS_DATA.filter(tenant => 
@@ -26,10 +27,7 @@ const Tenants = () => {
   };
 
   const handleAddTenant = () => {
-    // For now, just show a toast notification
-    toast.info("Add Tenant feature is coming soon!");
-    // Later this can navigate to a form or open a dialog
-    // navigate('/add-tenant');
+    setAddDialogOpen(true);
   };
 
   return (
@@ -96,6 +94,8 @@ const Tenants = () => {
           );
         })}
       </div>
+
+      <AddTenantDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </div>
   );
 };

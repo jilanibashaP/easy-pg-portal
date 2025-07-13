@@ -1,45 +1,164 @@
-import express from 'express';
+import { Router } from 'express';
 import {
-  getAllPayments,
-  getPaymentById,
+  // Payment creation & management
   createPayment,
   updatePayment,
   deletePayment,
-  getPaymentsByTenant,
-  getPaymentsByRoom,
-  getPaymentsByPG,
-  getOverduePayments,
+  
+  // Payment viewing & listing
+  getPgPayments,
+  getTenantPayments,
+  getRoomPayments,
+  getPaymentById,
+  
+  // Payment status management
   getPendingPayments,
+  getOverduePayments,
+  getPaidPayments,
   markPaymentAsPaid,
+  markPaymentAsOverdue,
+  
+  // Filtering & search
+  getPaymentsByDateRange,
+  getPaymentsByMonth,
+  searchPayments,
+  getPaymentsByMethod,
+  
+  // Analytics & reporting
   getPaymentSummary,
-  getMonthlyPaymentReport,
-  bulkUpdatePaymentStatus
+  getMonthlyRevenue,
+  getTenantPaymentPerformance,
+  getCollectionEfficiency,
+  getOutstandingDues,
+  getPaymentMethodAnalytics,
+  
+  // Notification & reminder
+  getPaymentReminders,
+  markReminderSent,
+  getOverdueNotices,
+  
+  // Dashboard
+  getTodayCollections,
+  getWeekCollections,
+  getMonthlyTarget,
+  getRecentActivities
 } from '../controllers/paymentController';
 
-const router = express.Router();
+const router = Router();
 
-// Basic CRUD operations
-router.get('/', getAllPayments);                    // GET /api/payments
-router.get('/:id', getPaymentById);                 // GET /api/payments/:id
-router.post('/', createPayment);                    // POST /api/payments
-router.put('/:id', updatePayment);                  // PUT /api/payments/:id
-router.delete('/:id', deletePayment);               // DELETE /api/payments/:id
+// =============================================
+// 1. PAYMENT CREATION & MANAGEMENT ROUTES
+// =============================================
 
-// Filtered queries
-router.get('/tenant/:tenantId', getPaymentsByTenant);  // GET /api/payments/tenant/:tenantId
-router.get('/room/:roomId', getPaymentsByRoom);        // GET /api/payments/room/:roomId
-router.get('/pg/:pgId', getPaymentsByPG);              // GET /api/payments/pg/:pgId
+// Create a new rent payment record (usually for new billing cycle)
+router.post('/payments', createPayment);
 
-// Status-based queries
-router.get('/status/overdue', getOverduePayments);     // GET /api/payments/status/overdue
-router.get('/status/pending', getPendingPayments);     // GET /api/payments/status/pending
+// Update payment status (mark as paid, update paid amount, etc.)
+router.put('/payments/:id', updatePayment);
 
-// Payment actions
-router.patch('/:id/mark-paid', markPaymentAsPaid);     // PATCH /api/payments/:id/mark-paid
-router.patch('/bulk-update', bulkUpdatePaymentStatus); // PATCH /api/payments/bulk-update
+// Delete a payment record
+router.delete('/payments/:id', deletePayment);
 
-// Analytics and reporting
-router.get('/analytics/summary', getPaymentSummary);       // GET /api/payments/analytics/summary
-router.get('/analytics/monthly', getMonthlyPaymentReport); // GET /api/payments/analytics/monthly
+// =============================================
+// 2. PAYMENT VIEWING & LISTING ROUTES
+// =============================================
+
+// Get all payments for a specific PG
+router.get('/pg/:pgId/payments', getPgPayments);
+
+// Get payments for a specific tenant
+router.get('/tenant/:tenantId/payments', getTenantPayments);
+
+// Get payments for a specific room
+router.get('/room/:roomId/payments', getRoomPayments);
+
+// Get a specific payment by ID
+router.get('/payments/:id', getPaymentById);
+
+// =============================================
+// 3. PAYMENT STATUS MANAGEMENT ROUTES
+// =============================================
+
+// Get all pending payments
+router.get('/pg/:pgId/payments/pending', getPendingPayments);
+
+// Get all overdue payments
+router.get('/pg/:pgId/payments/overdue', getOverduePayments);
+
+// Get all paid payments
+router.get('/pg/:pgId/payments/paid', getPaidPayments);
+
+// Mark payment as paid
+router.patch('/payments/:id/mark-paid', markPaymentAsPaid);
+
+// Mark payment as overdue
+router.patch('/payments/:id/mark-overdue', markPaymentAsOverdue);
+
+// =============================================
+// 6. FILTERING & SEARCH ROUTES
+// =============================================
+
+// Filter payments by date range
+router.get('/pg/:pgId/payments/date-range', getPaymentsByDateRange);
+
+// Filter payments by month/year
+router.get('/pg/:pgId/payments/month/:month', getPaymentsByMonth);
+
+// Search payments by tenant name or room number
+router.get('/pg/:pgId/payments/search', searchPayments);
+
+// Filter by payment method
+router.get('/pg/:pgId/payments/method/:method', getPaymentsByMethod);
+
+// =============================================
+// 7. ANALYTICS & REPORTING ROUTES
+// =============================================
+
+// Get payment summary for dashboard
+router.get('/pg/:pgId/payments/summary', getPaymentSummary);
+
+// Monthly revenue report
+router.get('/pg/:pgId/revenue/monthly', getMonthlyRevenue);
+
+// Tenant payment performance
+router.get('/pg/:pgId/tenant-payment-performance', getTenantPaymentPerformance);
+
+// Collection efficiency report
+router.get('/pg/:pgId/collection-efficiency', getCollectionEfficiency);
+
+// Outstanding dues report
+router.get('/pg/:pgId/outstanding-dues', getOutstandingDues);
+
+// Payment method analytics
+router.get('/pg/:pgId/payment-methods/analytics', getPaymentMethodAnalytics);
+
+// =============================================
+// 8. NOTIFICATION & REMINDER ROUTES
+// =============================================
+
+// Get tenants to send payment reminders
+router.get('/pg/:pgId/payment-reminders', getPaymentReminders);
+
+// Mark reminder as sent
+router.patch('/payments/:id/reminder-sent', markReminderSent);
+
+// Get overdue notice recipients
+router.get('/pg/:pgId/overdue-notices', getOverdueNotices);
+
+// =============================================
+// 14. DASHBOARD ROUTES
+// =============================================
+
+// Today's collections
+router.get('/pg/:pgId/today-collections', getTodayCollections);
+
+// This week's collections
+router.get('/pg/:pgId/week-collections', getWeekCollections);
+
+// Monthly collection target vs actual
+router.get('/pg/:pgId/monthly-target', getMonthlyTarget);
+
+// Recent payment activities
+router.get('/pg/:pgId/recent-activities', getRecentActivities);
 
 export default router;

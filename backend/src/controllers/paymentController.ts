@@ -1,353 +1,902 @@
 import { Request, Response } from 'express';
-import { Op, WhereOptions, fn, col } from 'sequelize';
 import { RentPayment } from '../models/RentPayment';
+import { Op, fn, col, Model, DataTypes } from 'sequelize';
 
-// Utility type for query params
-type QueryParams = {
-  pgId?: string;
-  tenantId?: string;
-  roomId?: string;
-  status?: string;
-  month?: string;
-  startDate?: string;
-  endDate?: string;
-  paymentMethod?: string;
-  page?: string;
-  limit?: string;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-  year?: string;
-};
+// =============================================
+// 1. PAYMENT CREATION & MANAGEMENT METHODS
+// =============================================
 
-export const getAllPayments = async (req: Request<{}, {}, {}, QueryParams>, res: Response) => {
+// Create a new rent payment record
+export const createPayment = async (req: Request, res: Response) => {
   try {
-    const {
+    console.log('Creating payment with data:', req.body);
+    const { pgId, tenantId, roomId, month, dueDate, rentAmount } = req.body;
+
+    const payment = await RentPayment.create({
       pgId,
       tenantId,
       roomId,
-      status,
       month,
-      startDate,
-      endDate,
-      paymentMethod,
-      page = '1',
-      limit = '10',
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-    } = req.query;
+      dueDate,
+      rentAmount,
+      paidAmount: 0,
+      lateFee: 0,
+      status: 'PENDING'
+    });
 
-    const where: WhereOptions = {};
+    res.status(201).json({
+      success: true,
+      message: 'Payment record created successfully',
+      data: payment
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error creating payment record',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
 
-    if (pgId) where.pgId = pgId;
-    if (tenantId) where.tenantId = tenantId;
-    if (roomId) where.roomId = roomId;
-    if (status) where.status = status;
-    if (month) where.month = month;
-    if (paymentMethod) where.paymentMethod = paymentMethod;
-
-    if (startDate || endDate) {
-      where.paidDate = {};
-      if (startDate) where.paidDate[Op.gte] = new Date(startDate);
-      if (endDate) where.paidDate[Op.lte] = new Date(endDate);
+// Update payment status
+export const updatePayment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const presentDate = new Date().toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
+    const { paidAmount, paymentMethod = "CASH", status = "PAID", paidDate = presentDate } = req.body;
+    const payment = await RentPayment.findByPk(id);
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
     }
+
+    // Create update object by merging existing payment data with updates
+    const updateData = {
+      ...payment.toJSON(), // Get all existing attributes
+      paidAmount,
+      paymentMethod,
+      status,
+      paidDate // Override with provided updates
+    };
+
+    // Update the payment record
+    await payment.update(updateData);
+
+    // Reload to get fresh data
+    await payment.reload();
+
+    res.json({
+      success: true,
+      message: 'Payment updated successfully',
+      data: payment
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating payment',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Delete payment record
+export const deletePayment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const payment = await RentPayment.findByPk(id);
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
+    }
+
+    await payment.destroy();
+
+    res.json({
+      success: true,
+      message: 'Payment record deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting payment',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// =============================================
+// 2. PAYMENT VIEWING & LISTING METHODS
+// =============================================
+
+// Get all payments for a specific PG
+export const getPgPayments = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+    const { page = 1, limit = 10, sortBy = 'dueDate', sortOrder = 'DESC' } = req.query;
 
     const offset = (Number(page) - 1) * Number(limit);
 
-    const { count, rows: payments } = await RentPayment.findAndCountAll({
-      where,
+    const payments = await RentPayment.findAndCountAll({
+      where: { pgId },
+      order: [[sortBy as string, sortOrder as string]],
       limit: Number(limit),
-      offset,
-      order: [[sortBy, sortOrder]],
+      offset
     });
 
     res.json({
-      payments,
+      success: true,
+      data: payments.rows,
       pagination: {
-        currentPage: Number(page),
-        totalPages: Math.ceil(count / Number(limit)),
-        totalItems: count,
-        itemsPerPage: Number(limit),
-      },
+        page: Number(page),
+        limit: Number(limit),
+        total: payments.count,
+        pages: Math.ceil(payments.count / Number(limit))
+      }
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch payments' });
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching PG payments',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
 
+// Get payments for a specific tenant
+export const getTenantPayments = async (req: Request, res: Response) => {
+  try {
+    const { tenantId, pgId } = req.params;
+
+    const payments = await RentPayment.findAll({
+      where: { tenantId, pgId },
+      order: [['dueDate', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching tenant payments',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Get payments for a specific room
+export const getRoomPayments = async (req: Request, res: Response) => {
+  try {
+    const { roomId, pgId } = req.params;
+
+    const payments = await RentPayment.findAll({
+      where: { roomId, pgId },
+      order: [['dueDate', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching room payments',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Get specific payment by ID
 export const getPaymentById = async (req: Request, res: Response) => {
   try {
-    const payment = await RentPayment.findByPk(req.params.id);
-    if (!payment) return res.status(404).json({ error: 'Payment not found' });
-
-    res.json(payment);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch payment' });
-  }
-};
-
-export const createPayment = async (req: Request, res: Response) => {
-  try {
-    const payment = await RentPayment.create(req.body);
-    res.status(201).json(payment);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create payment' });
-  }
-};
-
-export const updatePayment = async (req: Request, res: Response) => {
-  try {
-    const payment = await RentPayment.findByPk(req.params.id);
-    if (!payment) return res.status(404).json({ error: 'Payment not found' });
-
-    await payment.update(req.body);
-    res.json(payment);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update payment' });
-  }
-};
-
-export const deletePayment = async (req: Request, res: Response) => {
-  try {
-    const payment = await RentPayment.findByPk(req.params.id);
-    if (!payment) return res.status(404).json({ error: 'Payment not found' });
-
-    await payment.destroy();
-    res.json({ message: 'Payment deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete payment' });
-  }
-};
-
-export const getPaymentsByTenant = async (req: Request<{ tenantId: string }, {}, {}, QueryParams>, res: Response) => {
-  try {
-    const { tenantId } = req.params;
-    const { status, startDate, endDate, sortBy = 'dueDate', sortOrder = 'DESC' } = req.query;
-
-    const where: WhereOptions = { tenantId };
-    if (status) where.status = status;
-    if (startDate || endDate) {
-      where.paidDate = {};
-      if (startDate) where.paidDate[Op.gte] = new Date(startDate);
-      if (endDate) where.paidDate[Op.lte] = new Date(endDate);
-    }
-
-    const payments = await RentPayment.findAll({
-      where,
-      order: [[sortBy, sortOrder]],
-    });
-
-    res.json(payments);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch tenant payments' });
-  }
-};
-
-export const getPaymentsByRoom = async (req: Request<{ roomId: string }, {}, {}, QueryParams>, res: Response) => {
-  try {
-    const { roomId } = req.params;
-    const { status, startDate, endDate, sortBy = 'dueDate', sortOrder = 'DESC' } = req.query;
-
-    const where: WhereOptions = { roomId };
-    if (status) where.status = status;
-    if (startDate || endDate) {
-      where.paidDate = {};
-      if (startDate) where.paidDate[Op.gte] = new Date(startDate);
-      if (endDate) where.paidDate[Op.lte] = new Date(endDate);
-    }
-
-    const payments = await RentPayment.findAll({
-      where,
-      order: [[sortBy, sortOrder]],
-    });
-
-    res.json(payments);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch room payments' });
-  }
-};
-
-export const getPaymentsByPG = async (req: Request<{ pgId: string }, {}, {}, QueryParams>, res: Response) => {
-  try {
-    const { pgId } = req.params;
-    const { status, startDate, endDate, sortBy = 'dueDate', sortOrder = 'DESC' } = req.query;
-
-    const where: WhereOptions = { pgId };
-    if (status) where.status = status;
-    if (startDate || endDate) {
-      where.paidDate = {};
-      if (startDate) where.paidDate[Op.gte] = new Date(startDate);
-      if (endDate) where.paidDate[Op.lte] = new Date(endDate);
-    }
-
-    const payments = await RentPayment.findAll({
-      where,
-      order: [[sortBy, sortOrder]],
-    });
-
-    res.json(payments);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch PG payments' });
-  }
-};
-
-export const getOverduePayments = async (req: Request<{}, {}, {}, QueryParams>, res: Response) => {
-  try {
-    const { pgId } = req.query;
-    const where: WhereOptions = {
-      status: 'OVERDUE',
-      dueDate: { [Op.lt]: new Date() },
-    };
-
-    if (pgId) where.pgId = pgId;
-
-    const payments = await RentPayment.findAll({
-      where,
-      order: [['dueDate', 'ASC']],
-    });
-
-    res.json(payments);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch overdue payments' });
-  }
-};
-
-export const getPendingPayments = async (req: Request<{}, {}, {}, QueryParams>, res: Response) => {
-  try {
-    const { pgId } = req.query;
-    const where: WhereOptions = { status: 'PENDING' };
-    if (pgId) where.pgId = pgId;
-
-    const payments = await RentPayment.findAll({
-      where,
-      order: [['dueDate', 'ASC']],
-    });
-
-    res.json(payments);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch pending payments' });
-  }
-};
-
-export const markPaymentAsPaid = async (req: Request<{ id: string }, {}, {
-  paidAmount?: any;
-  paymentMethod?: any;
-  paidDate?: any;
-}>, res: Response) => {
-  try {
     const { id } = req.params;
-    const { paidAmount, paymentMethod, paidDate = new Date() } = req.body;
 
     const payment = await RentPayment.findByPk(id);
-    if (!payment) return res.status(404).json({ error: 'Payment not found' });
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: payment
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching payment',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// =============================================
+// 3. PAYMENT STATUS MANAGEMENT METHODS
+// =============================================
+
+// Get pending payments
+export const getPendingPayments = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const payments = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: 'PENDING'
+      },
+      order: [['dueDate', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching pending payments',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Get overdue payments
+export const getOverduePayments = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const payments = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: 'OVERDUE'
+      },
+      order: [['dueDate', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching overdue payments',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Get paid payments
+export const getPaidPayments = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const payments = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: 'PAID'
+      },
+      order: [['paidDate', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching paid payments',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Mark payment as paid
+export const markPaymentAsPaid = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { paidAmount, paymentMethod } = req.body;
+
+    const payment = await RentPayment.findByPk(id);
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
+    }
 
     await payment.update({
       status: 'PAID',
-      paidAmount: paidAmount ?? payment.paidAmount,
+      paidAmount,
       paymentMethod,
-      paidDate,
+      paidDate: new Date()
     });
-
-    res.json(payment);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to mark payment as paid' });
-  }
-};
-
-export const getPaymentSummary = async (req: Request<{}, {}, {}, QueryParams>, res: Response) => {
-  try {
-    const { pgId, startDate, endDate, month } = req.query;
-    const where: WhereOptions = {};
-
-    if (pgId) where.pgId = pgId;
-    if (month) where.month = month;
-    if (startDate || endDate) {
-      where.paidDate = {};
-      if (startDate) where.paidDate[Op.gte] = new Date(startDate);
-      if (endDate) where.paidDate[Op.lte] = new Date(endDate);
-    }
-
-    const [totalPayments, paidPayments, pendingPayments, overduePayments] = await Promise.all([
-      RentPayment.count({ where }),
-      RentPayment.count({ where: { ...where, status: 'PAID' } }),
-      RentPayment.count({ where: { ...where, status: 'PENDING' } }),
-      RentPayment.count({ where: { ...where, status: 'OVERDUE' } }),
-    ]);
-
-    const [totalAmount, paidAmount, pendingAmount, overdueAmount] = await Promise.all([
-      RentPayment.sum('rentAmount', { where }),
-      RentPayment.sum('paidAmount', { where: { ...where, status: 'PAID' } }),
-      RentPayment.sum('rentAmount', { where: { ...where, status: 'PENDING' } }),
-      RentPayment.sum('rentAmount', { where: { ...where, status: 'OVERDUE' } }),
-    ]);
-
-    const totalLateFees = await RentPayment.sum('lateFee', { where });
 
     res.json({
-      counts: {
-        total: totalPayments,
-        paid: paidPayments,
-        pending: pendingPayments,
-        overdue: overduePayments,
-      },
-      amounts: {
-        totalRent: totalAmount ?? 0,
-        paidAmount: paidAmount ?? 0,
-        pendingAmount: pendingAmount ?? 0,
-        overdueAmount: overdueAmount ?? 0,
-        totalLateFees: totalLateFees ?? 0,
-      },
-      collectionRate: totalAmount ? ((paidAmount ?? 0) / totalAmount * 100).toFixed(2) : '0',
+      success: true,
+      message: 'Payment marked as paid successfully',
+      data: payment
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch payment summary' });
+    res.status(500).json({
+      success: false,
+      message: 'Error marking payment as paid',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
 
-export const getMonthlyPaymentReport = async (req: Request<{}, {}, {}, QueryParams>, res: Response) => {
+// Mark payment as overdue
+export const markPaymentAsOverdue = async (req: Request, res: Response) => {
   try {
-    const { pgId, year } = req.query;
-    const where: WhereOptions = {};
+    const { id } = req.params;
+    const { lateFee = 0 } = req.body;
 
-    if (pgId) where.pgId = pgId;
-    if (year) where.month = { [Op.like]: `${year}-%` };
-
-    const payments = await RentPayment.findAll({
-      where,
-      attributes: [
-        'month',
-        [fn('COUNT', col('id')), 'totalPayments'],
-        [fn('SUM', col('rentAmount')), 'totalRent'],
-        [fn('SUM', col('paidAmount')), 'totalPaid'],
-        [fn('SUM', col('lateFee')), 'totalLateFees'],
-      ],
-      group: ['month'],
-      order: [['month', 'ASC']],
-    });
-
-    res.json(payments);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch monthly payment report' });
-  }
-};
-
-export const bulkUpdatePaymentStatus = async (req: Request, res: Response) => {
-  try {
-    const { paymentIds, status, paidDate, paymentMethod } = req.body;
-
-    if (!paymentIds || !Array.isArray(paymentIds) || paymentIds.length === 0) {
-      return res.status(400).json({ error: 'Payment IDs are required' });
+    const payment = await RentPayment.findByPk(id);
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
     }
 
-    const updateData: Record<string, any> = { status };
-    if (paidDate) updateData.paidDate = paidDate;
-    if (paymentMethod) updateData.paymentMethod = paymentMethod;
-
-    await RentPayment.update(updateData, {
-      where: { id: { [Op.in]: paymentIds } },
+    await payment.update({
+      status: 'OVERDUE',
+      lateFee
     });
 
-    res.json({ message: 'Payments updated successfully' });
+    res.json({
+      success: true,
+      message: 'Payment marked as overdue successfully',
+      data: payment
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update payments' });
+    res.status(500).json({
+      success: false,
+      message: 'Error marking payment as overdue',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// =============================================
+// 6. FILTERING & SEARCH METHODS
+// =============================================
+
+// Filter payments by date range
+export const getPaymentsByDateRange = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const payments = await RentPayment.findAll({
+      where: {
+        pgId,
+        dueDate: {
+          [Op.between]: [startDate as string, endDate as string]
+        }
+      },
+      order: [['dueDate', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching payments by date range',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Filter payments by month
+export const getPaymentsByMonth = async (req: Request, res: Response) => {
+  try {
+    const { pgId, month } = req.params;
+
+    const payments = await RentPayment.findAll({
+      where: {
+        pgId,
+        month
+      },
+      order: [['dueDate', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching payments by month',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Search payments
+export const searchPayments = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+    const { q } = req.query;
+
+    // This would require joins with tenant and room tables
+    // For now, implementing basic search on payment fields
+    const payments = await RentPayment.findAll({
+      where: {
+        pgId,
+        [Op.or]: [
+          { tenantId: { [Op.iLike]: `%${q}%` } },
+          { roomId: { [Op.iLike]: `%${q}%` } }
+        ]
+      },
+      order: [['dueDate', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error searching payments',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Filter by payment method
+export const getPaymentsByMethod = async (req: Request, res: Response) => {
+  try {
+    const { pgId, method } = req.params;
+
+    const payments = await RentPayment.findAll({
+      where: {
+        pgId,
+        paymentMethod: method
+      },
+      order: [['paidDate', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching payments by method',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// =============================================
+// 7. ANALYTICS & REPORTING METHODS
+// =============================================
+
+// Get payment summary
+export const getPaymentSummary = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const summary = await RentPayment.findAll({
+      where: { pgId },
+      attributes: [
+        'status',
+        [fn('SUM', col('paidAmount')), 'totalAmount'],
+        [fn('COUNT', '*'), 'count']
+      ],
+      group: ['status']
+    });
+
+    res.json({
+      success: true,
+      data: summary
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching payment summary',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Monthly revenue report
+export const getMonthlyRevenue = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const revenue = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: 'PAID'
+      },
+      attributes: [
+        'month',
+        [fn('SUM', col('paidAmount')), 'totalRevenue'],
+        [fn('COUNT', '*'), 'paymentCount']
+      ],
+      group: ['month'],
+      order: [['month', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: revenue
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching monthly revenue',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Tenant payment performance
+export const getTenantPaymentPerformance = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const performance = await RentPayment.findAll({
+      where: { pgId },
+      attributes: [
+        'tenantId',
+        'status',
+        [fn('COUNT', '*'), 'count']
+      ],
+      group: ['tenantId', 'status'],
+      order: [['tenantId', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: performance
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching tenant payment performance',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Collection efficiency
+export const getCollectionEfficiency = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const totalPayments = await RentPayment.count({ where: { pgId } });
+    const paidPayments = await RentPayment.count({
+      where: { pgId, status: 'PAID' }
+    });
+    const overduePayments = await RentPayment.count({
+      where: { pgId, status: 'OVERDUE' }
+    });
+
+    const efficiency = {
+      totalPayments,
+      paidPayments,
+      overduePayments,
+      collectionRate: totalPayments > 0 ? (paidPayments / totalPayments) * 100 : 0,
+      overdueRate: totalPayments > 0 ? (overduePayments / totalPayments) * 100 : 0
+    };
+
+    res.json({
+      success: true,
+      data: efficiency
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error calculating collection efficiency',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Outstanding dues
+export const getOutstandingDues = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const outstandingDues = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: { [Op.in]: ['PENDING', 'OVERDUE'] }
+      },
+      attributes: [
+        [fn('SUM', col('rentAmount')), 'totalDues'],
+        [fn('SUM', col('lateFee')), 'totalLateFees'],
+        [fn('COUNT', '*'), 'paymentCount']
+      ]
+    });
+
+    res.json({
+      success: true,
+      data: outstandingDues[0]
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching outstanding dues',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Payment method analytics
+export const getPaymentMethodAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const analytics = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: 'PAID'
+      },
+      attributes: [
+        'paymentMethod',
+        [fn('COUNT', '*'), 'count'],
+        [fn('SUM', col('paidAmount')), 'totalAmount']
+      ],
+      group: ['paymentMethod']
+    });
+
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching payment method analytics',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// =============================================
+// 8. NOTIFICATION & REMINDER METHODS
+// =============================================
+
+// Get payment reminders
+export const getPaymentReminders = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+    const today = new Date();
+    const reminderDate = new Date(today);
+    reminderDate.setDate(today.getDate() + 3); // 3 days before due date
+
+    const reminders = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: 'PENDING',
+        dueDate: {
+          [Op.between]: [today, reminderDate]
+        }
+      },
+      order: [['dueDate', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: reminders
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching payment reminders',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Mark reminder as sent
+export const markReminderSent = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const payment = await RentPayment.findByPk(id);
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
+    }
+
+    // You might want to add a reminderSent field to the model
+    // For now, we'll just acknowledge the action
+    res.json({
+      success: true,
+      message: 'Reminder marked as sent'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error marking reminder as sent',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Get overdue notices
+export const getOverdueNotices = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const notices = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: 'OVERDUE'
+      },
+      order: [['dueDate', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: notices
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching overdue notices',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// =============================================
+// 14. DASHBOARD METHODS
+// =============================================
+
+// Today's collections
+export const getTodayCollections = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+    const today = new Date().toISOString().split('T')[0];
+
+    const collections = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: 'PAID',
+        paidDate: today
+      },
+      attributes: [
+        [fn('SUM', col('paidAmount')), 'totalAmount'],
+        [fn('COUNT', '*'), 'paymentCount']
+      ]
+    });
+
+    res.json({
+      success: true,
+      data: collections[0]
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching today\'s collections',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// This week's collections
+export const getWeekCollections = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+
+    const collections = await RentPayment.findAll({
+      where: {
+        pgId,
+        status: 'PAID',
+        paidDate: {
+          [Op.gte]: weekStart
+        }
+      },
+      attributes: [
+        [fn('SUM', col('paidAmount')), 'totalAmount'],
+        [fn('COUNT', '*'), 'paymentCount']
+      ]
+    });
+
+    res.json({
+      success: true,
+      data: collections[0]
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching week\'s collections',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Monthly target vs actual
+export const getMonthlyTarget = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+
+    const actual = await RentPayment.findAll({
+      where: {
+        pgId,
+        month: currentMonth,
+        status: 'PAID'
+      },
+      attributes: [
+        [fn('SUM', col('paidAmount')), 'actualAmount']
+      ]
+    });
+
+    const target = await RentPayment.findAll({
+      where: {
+        pgId,
+        month: currentMonth
+      },
+      attributes: [
+        [fn('SUM', col('rentAmount')), 'targetAmount']
+      ]
+    });
+
+    res.json({
+      success: true,
+      data: {
+        target: target[0],
+        actual: actual[0]
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching monthly target',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// Recent activities
+export const getRecentActivities = async (req: Request, res: Response) => {
+  try {
+    const { pgId } = req.params;
+
+    const activities = await RentPayment.findAll({
+      where: { pgId },
+      order: [['updatedAt', 'DESC']],
+      limit: 10
+    });
+
+    res.json({
+      success: true,
+      data: activities
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching recent activities',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };

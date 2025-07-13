@@ -182,10 +182,10 @@ export const updateTenant = async (req: Request, res: Response) => {
 
 export const deleteTenant = async (req: Request, res: Response) => {
   try {
-        const { pgId } = req.body || req.query;
-        if (!pgId || typeof pgId !== 'string') {
-            return res.status(400).json({ error: 'pgId is required as a query parameter or in body' });
-        }
+    const { pgId } = req.body || req.query;
+    if (!pgId || typeof pgId !== 'string') {
+      return res.status(400).json({ error: 'pgId is required as a query parameter or in body' });
+    }
 
     // Step 1: Find the tenant
     const tenant = await Tenant.findOne({

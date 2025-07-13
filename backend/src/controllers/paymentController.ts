@@ -150,7 +150,8 @@ export const getPgPayments = async (req: Request, res: Response) => {
 // Get payments for a specific tenant
 export const getTenantPayments = async (req: Request, res: Response) => {
   try {
-    const { tenantId, pgId } = req.params;
+    const { tenantId } = req.params;
+    const { pgId } = req.body;
 
     const payments = await RentPayment.findAll({
       where: { tenantId, pgId },
@@ -173,7 +174,8 @@ export const getTenantPayments = async (req: Request, res: Response) => {
 // Get payments for a specific room
 export const getRoomPayments = async (req: Request, res: Response) => {
   try {
-    const { roomId, pgId } = req.params;
+    const { roomId } = req.params;
+    const { pgId } = req.body;
 
     const payments = await RentPayment.findAll({
       where: { roomId, pgId },
@@ -405,7 +407,8 @@ export const getPaymentsByDateRange = async (req: Request, res: Response) => {
 // Filter payments by month
 export const getPaymentsByMonth = async (req: Request, res: Response) => {
   try {
-    const { pgId, month } = req.params;
+    const { month } = req.params;
+    const { pgId } = req.body;
 
     const payments = await RentPayment.findAll({
       where: {

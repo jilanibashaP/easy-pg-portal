@@ -15,7 +15,7 @@ export const Expense = sequelize.define('Expense', {
     type: DataTypes.ENUM('CASH', 'BANK_TRANSFER', 'UPI'),
     allowNull: false
   },
-  employeeId: { type: DataTypes.UUID, allowNull: true }, // optional if not a salary expense
+  employeeId: { type: DataTypes.UUID, allowNull: true },
   vendorName: { type: DataTypes.STRING, allowNull: true },
   receiptNumber: { type: DataTypes.STRING, allowNull: true }
 }, {

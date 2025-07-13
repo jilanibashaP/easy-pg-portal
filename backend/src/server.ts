@@ -7,6 +7,8 @@ const PORT = 5000;
 // dotenv.config();
 
 
+import './schedule_payments/creating_payments'; // This will trigger the auto-start
+
 const startServer = async () => {
     // console.log('Starting server...', process.env);
     app.listen(PORT, () => {

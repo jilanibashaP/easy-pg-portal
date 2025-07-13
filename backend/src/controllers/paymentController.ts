@@ -381,6 +381,9 @@ export const getPaymentsByDateRange = async (req: Request, res: Response) => {
     const { pgId } = req.params;
     const { startDate, endDate } = req.query;
 
+    console.log('Fetching payments from', startDate, 'to', endDate);
+    console.log('PG ID:', pgId);
+
     const payments = await RentPayment.findAll({
       where: {
         pgId,

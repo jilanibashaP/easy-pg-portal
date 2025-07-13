@@ -4,8 +4,10 @@ import { Room } from '../models/Room';
 
 export const getAllTenants = async (req: Request, res: Response) => {
   try {
-    // const { pgId } = req.query;
-    const pgId = "1a2b3c4d-1234-5678-9101-abcdefabcdef";
+    const { pgId } = req.body || req.query;
+    if (!pgId || typeof pgId !== 'string') {
+      return res.status(400).json({ error: 'pgId is required as a query parameter or in body' });
+    }
     let where = {};
     if (pgId) {
       if (typeof pgId !== 'string') {
@@ -24,8 +26,10 @@ export const getAllTenants = async (req: Request, res: Response) => {
 };
 
 export const getTenantById = async (req: Request, res: Response) => {
-  // const { pgId } = req.query;
-  const pgId = "1a2b3c4d-1234-5678-9101-abcdefabcdef";
+  const { pgId } = req.body || req.query;
+  if (!pgId || typeof pgId !== 'string') {
+    return res.status(400).json({ error: 'pgId is required as a query parameter or in body' });
+  }
   const tenant = await Tenant.findOne({
     where: { id: req.params.id, ...(pgId ? { pgId } : {}) },
   });
@@ -60,8 +64,8 @@ export const createTenant = async (req: Request, res: Response) => {
 
     // Step 1: Validate required fields
     if (!pgId || !name || !contactNumber || !roomId || !bedNumber || !joiningDate || !rentDueDate) {
-       res.status(400).json({ error: 'Missing required tenant fields' });
-       return
+      res.status(400).json({ error: 'Missing required tenant fields' });
+      return
     }
 
     // Step 2: Fetch room by roomId and pgId
@@ -69,8 +73,8 @@ export const createTenant = async (req: Request, res: Response) => {
 
     // Step 3: Validate room existence
     if (!roomDetails) {
-       res.status(404).json({ error: 'Room not found in this PG' });
-       return
+      res.status(404).json({ error: 'Room not found in this PG' });
+      return
     }
 
     // Step 4: Validate bed availability
@@ -78,8 +82,8 @@ export const createTenant = async (req: Request, res: Response) => {
     const totalBeds = roomDetails.totalBeds ?? 0;
 
     if (occupiedBeds >= totalBeds) {
-       res.status(400).json({ error: 'No available beds in this room' });
-        return;
+      res.status(400).json({ error: 'No available beds in this room' });
+      return;
     }
 
     // Step 5: Create the tenant
@@ -117,7 +121,10 @@ export const createTenant = async (req: Request, res: Response) => {
 
 export const updateTenant = async (req: Request, res: Response) => {
   try {
-    const { pgId } = req.body;
+    const { pgId } = req.body || req.query;
+    if (!pgId || typeof pgId !== 'string') {
+      return res.status(400).json({ error: 'pgId is required as a query parameter or in body' });
+    }
 
     // Step 1: Find the tenant by ID (and optionally pgId)
     const tenant = await Tenant.findOne({
@@ -175,12 +182,15 @@ export const updateTenant = async (req: Request, res: Response) => {
 
 export const deleteTenant = async (req: Request, res: Response) => {
   try {
-    const { pgId } = req.query;
+        const { pgId } = req.body || req.query;
+        if (!pgId || typeof pgId !== 'string') {
+            return res.status(400).json({ error: 'pgId is required as a query parameter or in body' });
+        }
 
     // Step 1: Find the tenant
     const tenant = await Tenant.findOne({
       where: { id: req.params.id, ...(pgId ? { pgId } : {}) },
-    })as any;
+    }) as any;
 
     if (!tenant) {
       return res.status(404).json({ error: 'Tenant not found' });

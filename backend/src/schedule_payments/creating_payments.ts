@@ -297,19 +297,19 @@ const startRentDueCronJob = (): void => {
 /**
  * Manual trigger function for testing
  */
-const triggerRentDueCheck = async (pgId: string | null = null): Promise<void> => {
-  if (pgId) {
-    await createRentDuePayments(pgId);
-    // await generateOverdueReport(pgId);
-  } else {
-    await processRentDuePayments();
-  }
-};
+// const triggerRentDueCheck = async (pgId: string | null = null): Promise<void> => {
+//   if (pgId) {
+//     await createRentDuePayments(pgId);
+//     // await generateOverdueReport(pgId);
+//   } else {
+//     await processRentDuePayments();
+//   }
+// };
 
 // Export functions
 export {
   startRentDueCronJob,
-  triggerRentDueCheck,
+  // triggerRentDueCheck,
   processRentDuePayments,
   createRentDuePayments,
 };

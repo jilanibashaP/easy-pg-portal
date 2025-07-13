@@ -59,7 +59,8 @@ export const createTenant = async (req: Request, res: Response) => {
       emergencyContactNumber,
       address,
       aadharNumber,
-      isActive
+      isActive,
+      roomName
     } = req.body;
 
     // Step 1: Validate required fields
@@ -103,7 +104,8 @@ export const createTenant = async (req: Request, res: Response) => {
       emergencyContactNumber,
       address,
       aadharNumber,
-      isActive
+      isActive,
+      roomName
     });
 
     // console.log('New tenant created:', tenant?.id);

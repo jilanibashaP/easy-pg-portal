@@ -151,9 +151,7 @@ const calculateLateFee = (
   return Math.floor(monthlyRent * 0.10);
 };
 
-/**
- * Creates payment records for tenants whose rent is due (including overdue payments)
- */
+
 const createRentDuePayments = async (pgId: string): Promise<void> => {
   try {
     console.log(`Starting comprehensive rent due check for PG: ${pgId}`);
@@ -187,10 +185,11 @@ const createRentDuePayments = async (pgId: string): Promise<void> => {
 
         for (const monthData of monthsToProcess) {
           // Check if payment record already exists
+          // Convert month to string for query
           const existingPayment = await RentPayment.findOne({
             where: {
               tenantId: tenant.id,
-              month: monthData.month,
+              month: monthData.month.toString(), // Convert to string
               dueDate: monthData.dueDate
             }
           }) as PaymentModel | null;
@@ -204,7 +203,7 @@ const createRentDuePayments = async (pgId: string): Promise<void> => {
               pgId: tenant.pgId,
               tenantId: tenant.id,
               roomId: tenant.roomId,
-              month: `${monthData.month}`,
+              month: monthData.month.toString(), // Convert to string
               dueDate: monthData.dueDate,
               rentAmount: tenant.monthlyRent,
               paidAmount: 0,
@@ -278,20 +277,23 @@ const processRentDuePayments = async (): Promise<void> => {
  */
 const startRentDueCronJob = (): void => {
   // Run every day at 9:00 AM
-  cron.schedule('0 0 9 * * *', async () => {
-    console.log('Rent due cron job triggered at:', new Date().toISOString());
-    await processRentDuePayments();
-  }, {
-    timezone: "Asia/Kolkata" // Adjust timezone as needed
-  });
-  //   console.log('Rent due cron job is set to run daily at 9:00 AM');
-  //   cron.schedule('*/3 * * * *', async () => {
+  // cron.schedule('0 0 9 * * *', async () => {
   //   console.log('Rent due cron job triggered at:', new Date().toISOString());
   //   await processRentDuePayments();
   // }, {
-  //   timezone: "Asia/Kolkata"
+  //   timezone: "Asia/Kolkata" // Adjust timezone as needed
   // });
+  console.log('Rent due cron job is set to run daily at 9:00 AM');
+  cron.schedule('*/3 * * * *', async () => {
+    console.log('Rent due cron job triggered at:', new Date().toISOString());
+    await processRentDuePayments();
+  }, {
+    timezone: "Asia/Kolkata"
+  });
+
+
 };
+
 /**
  * Manual trigger function for testing
  */

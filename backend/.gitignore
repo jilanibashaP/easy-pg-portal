@@ -2,3 +2,4 @@
 /dist
 /notes.ts
 /test-db.js
+.env

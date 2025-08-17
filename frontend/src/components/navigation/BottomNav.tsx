@@ -34,11 +34,11 @@ const BottomNav = () => {
       icon: Wallet,
       href: "/finance",
     },
-    {
-      name: "Stats",
-      icon: BarChart3,
-      href: "/stats",
-    },
+    // {
+    //   name: "Stats",
+    //   icon: BarChart3,
+    //   href: "/stats",
+    // },
     {
       name: "Settings",
       icon: Settings,

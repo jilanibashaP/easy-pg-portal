@@ -4,7 +4,7 @@ const API_BASE = 'http://localhost:5000/api/rooms';
 
 
 // Always use the static pgId for all API calls that require it
-const STATIC_PG_ID = '1a2b3c4d-1234-5678-9101-abcdefabcdef';
+const STATIC_PG_ID = 'b6d09371-48c1-451b-a10c-6b8932443f7b';
 
 export const fetchRooms = async (): Promise<Room[]> => {
   const res = await fetch(`${API_BASE}?pgId=${STATIC_PG_ID}`);

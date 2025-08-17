@@ -34,7 +34,7 @@ export const getAllExpenses = async (req: Request, res: Response) => {
     
     res.json(expenses);
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error });
   }
 };
 
@@ -55,7 +55,7 @@ export const getExpenseById = async (req: Request, res: Response) => {
     res.status(404).json({ error: 'Not found' });
     return;
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error });
   }
 };
 
@@ -91,7 +91,7 @@ export const getExpensesByEmployee = async (req: Request, res: Response) => {
     
     res.json(expenses);
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error });
   }
 };
 
@@ -122,13 +122,14 @@ export const getExpensesByDateRange = async (req: Request, res: Response) => {
     
     res.json(expenses);
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error',  details: error });
   }
 };
 
 export const createExpense = async (req: Request, res: Response) => {
+console.log("Creating expense with data:======>", req.body);
   try {
-    const { pgId, date, amount, category, paymentMethod } = req.body;
+    const { pgId, date, amount, category, paymentMethod ,employeeId,description,vendorName} = req.body;
     
     if (!pgId) {
       res.status(400).json({ error: 'pgId is required' });
@@ -140,10 +141,10 @@ export const createExpense = async (req: Request, res: Response) => {
       return;
     }
     
-    const expense = await Expense.create({ ...req.body, pgId });
+    const expense = await Expense.create({ pgId, date, amount, category,description, vendorName,paymentMethod,employeeId});
     res.status(201).json(expense);
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error });
   }
 };
 
@@ -166,7 +167,7 @@ export const updateExpense = async (req: Request, res: Response) => {
     res.json(expense);
     return;
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error});
   }
 };
 
@@ -189,6 +190,6 @@ export const deleteExpense = async (req: Request, res: Response) => {
     res.json({ message: 'Deleted' });
     return;
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error });
   }
 };

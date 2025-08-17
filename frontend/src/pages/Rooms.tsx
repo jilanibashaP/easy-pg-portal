@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import PageHeader from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const Rooms = () => {
+  console.log('Rooms component rendered');
   const [searchQuery, setSearchQuery] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   // const [count, setCount] = useState(0);
@@ -176,7 +176,15 @@ const Rooms = () => {
           />
         ))}
       </div>
-      <AddRoomDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <AddRoomDialog 
+        open={addDialogOpen} 
+        onOpenChange={(isOpen) => {
+          setAddDialogOpen(isOpen);
+          if (!isOpen) {
+            refreshRooms(); // Refresh rooms after dialog is closed
+          }
+        }}
+      />
       <AddTenantDialog
         open={tenantDialogOpen}
         onOpenChange={setTenantDialogOpen}

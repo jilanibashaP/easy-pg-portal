@@ -4,7 +4,8 @@ import { Room } from '../models/Room';
 
 export const getAllTenants = async (req: Request, res: Response) => {
   try {
-    const { pgId } = req.body || req.query;
+    const { pgId } = req.body || req.query || "b6d09371-48c1-451b-a10c-6b8932443f7b";
+    
     if (!pgId || typeof pgId !== 'string') {
       return res.status(400).json({ error: 'pgId is required as a query parameter or in body' });
     }
@@ -26,7 +27,7 @@ export const getAllTenants = async (req: Request, res: Response) => {
 };
 
 export const getTenantById = async (req: Request, res: Response) => {
-  const { pgId } = req.body || req.query;
+  const { pgId } = req.body || req.query || "b6d09371-48c1-451b-a10c-6b8932443f7b";
   if (!pgId || typeof pgId !== 'string') {
     return res.status(400).json({ error: 'pgId is required as a query parameter or in body' });
   }

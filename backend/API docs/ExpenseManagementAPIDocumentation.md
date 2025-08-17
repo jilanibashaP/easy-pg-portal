@@ -386,7 +386,24 @@ All endpoints may return the following error responses:
      "vendorName": "Cleaning Store",
      "receiptNumber": "CLN001"
    }
+
+   Response
+   {
+    "id": "efcc995c-5260-4806-9a48-8bf0276d3652",
+    "pgId": "b6d09371-48c1-451b-a10c-6b8932443f7b",
+    "date": "2024-01-20",
+    "amount": 800,
+    "category": "CLEANING",
+    "paymentMethod": "UPI",
+    "employeeId": null,
+    "updatedAt": "2025-08-17T17:57:30.670Z",
+    "createdAt": "2025-08-17T17:57:30.670Z",
+    "description": null,
+    "vendorName": null,
+    "receiptNumber": null
+   }
    ```
+
 
 ## Notes
 

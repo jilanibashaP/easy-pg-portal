@@ -11,8 +11,12 @@ import { getDashboardSummary } from '@/api/dashboardApi';
 import { Room } from '@/models/types';
 
 import { fetchRooms } from '@/api/roomApi';
+import { fetchExpensesWithFilters } from '@/api/expenseApi';
+import { fetchPayments } from '@/api/paymentApi';
+import { fetchTenants } from '@/api/tenantApi';
 
 const Dashboard = () => {
+  const pgId = "b6d09371-48c1-451b-a10c-6b8932443f7b"
   const navigate = useNavigate();
   const [summary, setSummary] = useState<any>(null);
 
@@ -32,6 +36,28 @@ const Dashboard = () => {
       setRooms(roomsData);
     };
     getRooms();
+  }, []);
+
+  // expenses, payments, tenants data
+  const [expenses, setExpenses] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [tenants, setTenants] = useState([]);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const expensesData = await fetchExpensesWithFilters('b6d09371-48c1-451b-a10c-6b8932443f7b');
+        const paymentsData = await fetchPayments();
+        const tenantsData = await fetchTenants();
+        
+        setExpenses(expensesData);
+        setPayments(paymentsData);
+        setTenants(tenantsData);
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      }
+    };
+
+    loadData();
   }, []);
 
   // Generate occupancy data for last 7 days
@@ -208,6 +234,57 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Expenses, Payments, Tenants Data */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {expenses.map((expense) => (
+                <li key={expense.id} className="flex justify-between">
+                  <span>{expense.category}</span>
+                  <span>₹{expense.amount}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Payments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {payments.map((payment) => (
+                <li key={payment.id} className="flex justify-between">
+                  <span>{payment.month}</span>
+                  <span>₹{payment.rentAmount}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Tenants</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {tenants.map((tenant) => (
+                <li key={tenant.id} className="flex justify-between">
+                  <span>{tenant.name}</span>
+                  <span>{tenant.roomName}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
